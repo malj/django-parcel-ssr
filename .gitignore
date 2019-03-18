@@ -3,3 +3,6 @@
 .envrc
 .mypy_cache/
 .python-version
+build/
+dist/
+django_parcel_ssr.egg-info/
