@@ -34,8 +34,8 @@ TEMPLATES = [
             #     'WORKER_TTL': 1000,
             # },
             # 'scripts': {
-            #     'server': os.path.join(PACKAGE_DIR, 'ssr', 'scripts', 'react', 'server.js'),
-            #     'client': os.path.join(PACKAGE_DIR, 'ssr', 'scripts', 'react', 'client.js'),
+            #     'server': os.path.join(BASE_DIR, '.ssr', 'scripts', 'react', 'server.js'),
+            #     'client': os.path.join(BASE_DIR, '.ssr', 'scripts', 'react', 'client.js'),
             # }
         }
     },
@@ -164,7 +164,7 @@ Number of milliseconds Node workers will wait for Django to restart before exiti
 
 ### scripts.server
 
-Default: `'{PACKAGE_DIR}/ssr/scripts/react/server.js'`
+Default: `'{BASE_DIR}/.ssr/scripts/react/server.js'`
 
 Absolute path to custom `createRenderer` function, used to create `render` function which has to return HTML document string. This file is transpiled and executed on the server.
 
@@ -193,7 +193,7 @@ export default Component => ({ script, stylesheet }, props) => {
 
 ### scripts.client
 
-Default: `'{PACKAGE_DIR}/ssr/scripts/react/client.js'`
+Default: `'{BASE_DIR}/.ssr/scripts/react/client.js'`
 
 Absolute path to custom `hydrate` function, used to update the root DOM node when the page loads. This file is transpiled and executed in the browser.
 
