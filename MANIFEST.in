@@ -1,0 +1,3 @@
+include ssr/scripts/*.mjs
+include ssr/scripts/entries/*.js
+include ssr/scripts/react/*.js
