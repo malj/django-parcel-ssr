@@ -48,6 +48,14 @@ STATICFILES_DIRS = (
 )
 ```
 
+Initialize server side rendering in `wsgi.py`:
+
+```python
+# ...
+import ssr
+ssr.setup()
+```
+
 ## Usage
 
 JavaScript files in `bundles` directories of installed Django apps serve as Parcel entry points and they have to provide a root component as default export.

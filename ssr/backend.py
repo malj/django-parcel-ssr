@@ -13,6 +13,7 @@ from tempfile import gettempdir
 from .engine import Engine
 from .bundler import Bundler
 from .server import run as run_server
+from .worker import Worker
 
 
 class Components(BaseEngine):
@@ -98,32 +99,28 @@ class Components(BaseEngine):
                 **options.pop('scripts')
             }
 
-        self.engine = Engine(bundle_hash, STATIC_URL,
+        self.engine = Engine(bundle_hash, STATIC_URL,  # type: ignore
                              self.path, env, json_encoder)
-
-        server_thread = Thread(target=run_server,  args=[self.path, env])
-        server_thread.start()
 
         if env['NODE_ENV'] == 'production':
             for build_dir in (self.path['BUNDLES_DIR'], self.path['DIST_DIR']):
                 if os.path.exists(build_dir):
                     rmtree(build_dir, ignore_errors=True)
 
-        threads = []
+        server_thread = Thread(target=run_server,  args=[self.path, env])
+        threads = [server_thread]
         for template_dir in self.template_dirs:
             for extension in bundle_extensions:
                 pattern = os.path.join(template_dir, '*.' + extension)
                 templates = glob(pattern, recursive=True)
                 for template in templates:
-                    bundler = Bundler(template, bundle_hash, STATIC_URL,
-                                      self.path, env, cache, scripts)
+                    bundler = Bundler(  # type: ignore
+                        template, bundle_hash, STATIC_URL, self.path,
+                        env, cache, scripts)
                     thread = Thread(target=bundler.bundle)
                     threads.append(thread)
-                    thread.start()
 
-        server_thread.join()
-        for thread in threads:
-            thread.join()
+        Worker(threads)
 
     def get_template(self, template_name: str) -> 'Template':
         template_name = os.path.splitext(template_name)[0] + '.js'
