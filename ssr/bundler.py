@@ -87,7 +87,7 @@ class Bundler:
         hashed_name = Bundler.get_hashed_bundle_name(
             component, bundle_hash, node_env
         )
-        hashed_name = os.path.splitext(name)[0] + '.css'
+        hashed_name = os.path.splitext(hashed_name)[0] + '.css'
 
         if os.path.exists(os.path.join(bundle_dir, name)):
             return urllib.parse.urljoin(static_url, hashed_name)
