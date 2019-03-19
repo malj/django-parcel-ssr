@@ -28,7 +28,7 @@ class Components(BaseEngine):
             'NODE_ENV': 'development' if settings.DEBUG else 'production',
             'NODE_OPTIONS': '--experimental-modules --no-warnings',
             'WORKER_TTL': 1000,
-        }  # type: ignore
+        }
         if 'env' in options:
             env = {
                 **env,
@@ -115,8 +115,8 @@ class Components(BaseEngine):
                 pattern = os.path.join(template_dir, '*.' + extension)
                 templates = glob(pattern, recursive=True)
                 for template in templates:
-                    bundler = Bundler(template, bundle_hash, self.path,
-                                      env, cache, scripts)
+                    bundler = Bundler(template, bundle_hash, STATIC_URL,
+                                      self.path, env, cache, scripts)
                     thread = Thread(target=bundler.bundle)
                     threads.append(thread)
                     thread.start()

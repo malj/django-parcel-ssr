@@ -4,7 +4,6 @@ import time
 import urllib.parse
 from subprocess import Popen, PIPE
 from threading import Thread
-from django.conf import settings
 from typing import Dict, Callable
 from requests import codes
 from requests_unixsocket import Session
@@ -14,11 +13,12 @@ from .utils import wait_for_signal, read_output
 class Bundler:
     session = Session()
 
-    def __init__(self, component: str, bundle_hash: str,
+    def __init__(self, component: str, bundle_hash: str, static_url: str,
                  path: Dict[str, str],  env: Dict[str, str],
                  cache: bool, scripts: Dict[str, str]) -> None:
         self.component = component
         self.hash = bundle_hash
+        self.static_url = static_url
         self.path = path
         self.env = env
         self.cache = cache
@@ -150,6 +150,7 @@ class Bundler:
                 'config': {
                     'outDir': self.path['DIST_DIR'],
                     'outFile': self.hashed_bundle_name,
+                    'publicUrl': self.static_url,
                     'cache': self.cache,
                     'cacheDir': os.path.join(self.path['CACHE_DIR'], 'client')
                 }
