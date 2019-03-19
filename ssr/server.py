@@ -1,5 +1,4 @@
 import os
-import time
 import urllib.parse
 import json
 from json.encoder import JSONEncoder
@@ -7,8 +6,7 @@ from subprocess import Popen, PIPE
 from threading import Thread
 from requests import codes
 from requests_unixsocket import Session
-from shutil import rmtree
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 from .utils import wait_for_signal
 
 socket_name = 'renderer.sock'
