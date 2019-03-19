@@ -8,12 +8,15 @@ from .bundler import Bundler
 
 class Engine:
     def __init__(self, bundle_hash: str, static_url: str, path: Dict[str, str],
-                 env: Dict[str, str], json_encoder=DjangoJSONEncoder) -> None:
+                 env: Dict[str, str], json_encoder: str = None) -> None:
         self.bundle_hash = bundle_hash
         self.static_url = static_url
         self.path = path
         self.env = env
-        self.json_encoder = json_encoder
+        if json_encoder:
+            self.json_encoder = import_string(json_encoder)
+        else:
+            self.json_encoder = DjangoJSONEncoder
 
     def render(self, component: str, props: Dict[str, Any] = None) -> str:
         bundle_name = Bundler.get_bundle_name(component)
