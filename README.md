@@ -174,6 +174,7 @@ import { createElement, renderToString } from 'some-view-library'
 export default Component => ({ script, stylesheet }, props) => {
     const component = createElement(Component, props)
     const html = renderToString(component)
+    const serializedProps = encodeURIComponent(JSON.stringify(props))
     return `
         <!DOCTYPE html>
         <head>
@@ -183,7 +184,7 @@ export default Component => ({ script, stylesheet }, props) => {
         <body>
             <div id="root">${html}</div>
             <script>
-                window.props = "${encodeURIComponent(JSON.stringify(props))}" 
+                window.serializedProps = "${serializedProps}" 
             </script>
             <script src="${script}"></script>
         </body>
@@ -201,7 +202,8 @@ Absolute path to custom `hydrate` function, used to update the root DOM node whe
 import { createElement, hydrate } from 'some-view-library'
 
 export default Component => {
-    const component = createElement(Component, JSON.parse(decodeURIComponent(window.props)))
+    const props = JSON.parse(decodeURIComponent(window.serializedProps))
+    const component = createElement(Component, props)
     const root = document.getElementById('root')
     hydrate(component, root)
 }
