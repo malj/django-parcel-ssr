@@ -190,10 +190,7 @@ export default Component => ({ script, stylesheet }, props) => {
             ${stylesheet && `<link src="${stylesheet}" rel="stylesheet">`}
         </head>
         <body>
-            <div id="root">${html}</div>
-            <script>
-                window.serializedProps = "${serializedProps}" 
-            </script>
+            <div id="root" data-props="${serializedProps}">${html}</div>
             <script src="${script}"></script>
         </body>
     `
@@ -210,9 +207,9 @@ Absolute path to custom `hydrate` function, used to update the root DOM node whe
 import { createElement, hydrate } from 'some-view-library'
 
 export default Component => {
-    const props = JSON.parse(decodeURIComponent(window.serializedProps))
-    const component = createElement(Component, props)
     const root = document.getElementById('root')
+    const props = JSON.parse(decodeURIComponent(root.dataset.props))
+    const component = createElement(Component, props)
     hydrate(component, root)
 }
 ```
