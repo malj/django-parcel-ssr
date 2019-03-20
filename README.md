@@ -9,7 +9,7 @@ pip install django-parcel-ssr
 npm install parcel-bundler
 ```
 
-[React](https://reactjs.org/) is supported out of the box, but any JavaScript view library with server side rendering support can be used instead (see `scripts` option and [examples](tree/master/examples)). To use React install additional dependencies:
+[React](https://reactjs.org/) is supported out of the box, but any JavaScript view library with server side rendering support can be used instead (see `scripts` option and [examples](examples)). To use React install additional dependencies:
 
 ```bash
 npm install react react-dom react-helmet
@@ -216,8 +216,8 @@ export default Component => {
 
 ## Examples
 
-For advanced use cases such as using client side routing, state management libraries, or different JavaScript view libraries altogether, check out the [examples](tree/master/examples):
+For advanced use cases such as using client side routing, state management libraries, or different JavaScript view libraries altogether, check out the [examples](examples):
 
-- [React with React Router](tree/master/examples/react-with-react-router.md)
-- [React with Redux](tree/master/examples/react-with-redux.md)
-- [Cycle.js](tree/master/examples/cyclejs.md)
+- [React with React Router](examples/react-with-react-router.md)
+- [React with Redux](examples/react-with-redux.md)
+- [Cycle.js](examples/cyclejs.md)
