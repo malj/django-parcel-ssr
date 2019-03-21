@@ -42,10 +42,10 @@ class Components(BaseEngine):
             'WORKER_TTL': str(env['WORKER_TTL']),
         }
 
-        if 'bundle_extensions' in options:
-            bundle_extensions = options.pop('bundle_extensions')
+        if 'extensions' in options:
+            extensions = options.pop('extensions')
         else:
-            bundle_extensions = ['js', 'jsx', 'ts', 'tsx']
+            extensions = ['js', 'jsx', 'ts', 'tsx']
 
         if 'output_dir' in options:
             output_dir = options.pop('output_dir')
@@ -110,7 +110,7 @@ class Components(BaseEngine):
         server_thread = Thread(target=run_server,  args=[self.path, env])
         threads = [server_thread]
         for template_dir in self.template_dirs:
-            for extension in bundle_extensions:
+            for extension in extensions:
                 pattern = os.path.join(template_dir, '*.' + extension)
                 templates = glob(pattern, recursive=True)
                 for template in templates:
