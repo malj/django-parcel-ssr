@@ -12,7 +12,17 @@ npm install parcel-bundler
 [React](https://reactjs.org/) is supported out of the box, but any JavaScript view library with server side rendering support can be used instead (see `scripts` option and [examples](examples)). To use React install additional dependencies:
 
 ```bash
-npm install react react-dom react-helmet
+npm install react react-dom react-helmet styled-jsx
+```
+
+Default React setup comes with optional [`styled-jsx`](https://github.com/zeit/styled-jsx) CSS-in-JS support for writing CSS which applies only to a single component. To use it, add the `.babelrc` file with the plugin to your project root:
+
+```json
+{
+    "plugins": [
+        "styled-jsx/babel"
+    ]
+}
 ```
 
 Update `TEMPLATES` and `STATICFILES_DIRS` entries in `settings.py`:
@@ -77,6 +87,12 @@ export default props => {
             <h1>Count: {count}</h1>
             <button onClick={() => setCount(count + 1)}>+</button>
             <button onClick={() => setCount(count - 1)}>-</button>
+            
+            <style jsx>{`
+                h1 {
+                    color: ${props.color};
+                }
+            `}</style>
         </div>
     )
 }
@@ -93,7 +109,8 @@ from django.shortcuts import render
 def react_view(request):
     return render(request, 'template.js', context={
         'title': 'Django SSR'
-        'count': 0
+        'count': 0,
+        'color': 'red'
     })
     
 urlpatterns = [
@@ -108,7 +125,7 @@ Consult [Parcel documentation](https://parceljs.org/getting_started.html) to lea
 
 ### Restrictions
 
-Template context has to be a JSON serializable value because the actual rendering is handled by JavaScript. Django objects have to be [serialized](https://docs.djangoproject.com/en/2.1/topics/serialization/#serialization-formats-json); querysets can be rendered as dictionaries instead of model instances using [`QuerySet.values()`](https://docs.djangoproject.com/en/2.1/ref/models/querysets/#values). For advanced use cases such as handling model relations, serialize context data manually, e.g. using Django Rest Framework's [model serializer](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer).
+Template context has to be a JSON serializable value because the actual rendering is handled by JavaScript. Django objects have to be [serialized](https://docs.djangoproject.com/en/2.1/topics/serialization/#serialization-formats-json); querysets can be rendered as dictionaries instead of model instances using [`QuerySet.values()`](https://docs.djangoproject.com/en/2.1/ref/models/querysets/#values). For advanced use cases such as handling model relations, serialize context data manually, e.g. using Django REST Framework's [model serializer](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer).
 
 ## Options
 
