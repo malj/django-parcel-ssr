@@ -50,10 +50,11 @@ export default Component => {
 }
 ```
 
-Add custom scripts to `settings.py`:
+Add custom scripts and `vue` extension to `settings.py`:
 
 ```python
 'OPTIONS' : {
+    'extensions': ['vue'],
     'scripts': {
         'server': os.path.join(BASE_DIR, 'server.js'),
         'client': os.path.join(BASE_DIR, 'client.js'),
