@@ -221,3 +221,5 @@ For advanced use cases such as using client side routing, state management libra
 - [React with React Router](examples/react-with-react-router.md)
 - [React with Redux](examples/react-with-redux.md)
 - [Cycle.js](examples/cyclejs.md)
+- [Cycle.js React](examples/cyclejs-react.md)
+- [Vue.js](examples/vuejs.md)
