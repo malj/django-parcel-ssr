@@ -25,10 +25,8 @@ export default Component => ({ script, stylesheet }, props) => {
                 ${stylesheet && `<link href="${stylesheet}" rel="stylesheet">`}
             </head>
             <body>
-                <div id="root" data-props="${serializedProps}">
-                    ${html}
-                    <script src="${script}"></script>
-                </div>
+                <div id="root" data-props="${serializedProps}">${html}</div>
+                <script src="${script}"></script>
             </body>
         </html>
     `)
