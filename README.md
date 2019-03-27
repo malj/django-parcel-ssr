@@ -66,9 +66,18 @@ import ssr
 ssr.setup()
 ```
 
+We recommend adding `.ssr/` directory to `.gitignore`, to avoid committing your builds.
+
 ## Usage
 
-JavaScript files in `bundles` directories of installed Django apps serve as Parcel entry points and they have to provide a root component as default export.
+JavaScript files in `bundles` directories of installed Django apps serve as Parcel entry points and they have to provide a root component as default export. **Avoid putting non root components in `bundles` directories** to prevent unnecessary bundling:
+
+- `bundles/`
+    - `template.js`
+- `components/`
+    - `layout.js`
+    - `navbar.js`
+    - `...`
 
 Create an example `bundles/template.js` file in an installed app directory:
 
