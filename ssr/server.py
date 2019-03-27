@@ -1,72 +1,77 @@
-import os
-import urllib.parse
 import json
-from json.encoder import JSONEncoder
-from subprocess import Popen, PIPE
+from os import makedirs, remove, setsid, environ
+from os.path import join, dirname, exists
+from urllib.parse import quote_plus, urlencode
 from threading import Thread
+from subprocess import Popen, PIPE
 from requests import codes
 from requests_unixsocket import Session
-from typing import Dict, Any
+from .settings import Settings
 from .utils import wait_for_signal
+from .bundle import Bundle
 
-socket_name = 'renderer.sock'
 
+class Server:
+    socket_name = 'renderer.sock'
+    session = Session()
 
-def run(path: Dict[str, str], env: Dict[str, str]) -> None:
-    socket = os.path.join(path['SOCKETS_DIR'], socket_name)
-    host = urllib.parse.quote_plus(socket)
-    querystring = urllib.parse.urlencode({
-        'pid': env['DJANGO_PID']
-    })
-    url = 'http+unix://' + host + '?' + querystring
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.socket = join(self.settings.sockets_dir, self.socket_name)
 
-    try:
-        response = Session().get(url)
-        if response.status_code == codes.ok:
+    def get_url(self, path: str = '', params: dict = {}) -> str:
+        host = quote_plus(self.socket) + path
+        querystring = urlencode(params)
+        return 'http+unix://' + host + '?' + querystring
+
+    @property
+    def exists(self) -> bool:
+        url = self.get_url('', {
+            'pid': self.settings.env['DJANGO_PID']
+        })
+        try:
+            response = self.session.get(url)
+            if response.status_code == codes.ok:
+                return True
+        except:
+            pass
+        return False
+
+    def run(self) -> None:
+        if self.exists:
             return
-    except:
-        pass
 
-    os.makedirs(os.path.dirname(socket), exist_ok=True)
-    if os.path.exists(socket):
-        os.remove(socket)
+        makedirs(dirname(self.socket), exist_ok=True)
+        if exists(self.socket):
+            remove(self.socket)
 
-    argv = ['node', os.path.join(path['BASE_DIR'], 'scripts', 'server.mjs')]
-    process = Popen(argv, stdout=PIPE, stderr=PIPE, preexec_fn=os.setsid, env={
-        **os.environ,
-        **env,
-        'SOCKET': socket,
-    })
+        process = Popen([
+            'node', self.settings.server
+        ], stdout=PIPE, stderr=PIPE, preexec_fn=setsid, env={
+            **environ,
+            **self.settings.env,
+            'SOCKET': self.socket,
+        })
+        stdout_thread = Thread(target=wait_for_signal, args=[
+            process.stdout, self.settings.env['SIGNAL']
+        ])
+        stderr_thread = Thread(target=wait_for_signal, args=[
+            process.stderr, self.settings.env['SIGNAL']
+        ])
+        stdout_thread.start()
+        stderr_thread.start()
+        stdout_thread.join()
+        stderr_thread.join()
 
-    stdout_thread = Thread(target=wait_for_signal, args=[
-        process.stdout, env['SIGNAL']
-    ])
-    stderr_thread = Thread(target=wait_for_signal, args=[
-        process.stderr, env['SIGNAL']
-    ])
-
-    stdout_thread.start()
-    stderr_thread.start()
-
-    stdout_thread.join()
-    stderr_thread.join()
-
-
-def render(bundle_name: str, script: str, stylesheet: str,
-           path: Dict[str, str], props: Dict[str, Any] = None,
-           encoder: JSONEncoder = None) -> str:
-    socket = os.path.join(path['SOCKETS_DIR'], socket_name)
-    host = urllib.parse.quote_plus(socket) + '/render'
-    querystring = urllib.parse.urlencode({
-        'bundle': os.path.join(path['BUNDLES_DIR'], bundle_name),
-        'props': json.dumps(props, cls=encoder),
-        'script': script,
-        'stylesheet': stylesheet
-    })
-    url = 'http+unix://' + host + '?' + querystring
-    response = Session().get(url)
-
-    if response.status_code == codes.ok:
-        return response.text
-    else:
-        raise EnvironmentError(response.text)
+    def render(self, bundle: Bundle, props: dict = None) -> str:
+        url = self.get_url('/render', {
+            'bundle': join(bundle.server.out_dir, bundle.server.out_file),
+            'props': json.dumps(props, cls=self.settings.json_encoder),
+            'script': bundle.script,
+            'stylesheet': bundle.stylesheet
+        })
+        response = self.session.get(url)
+        if response.status_code == codes.ok:
+            return response.text
+        else:
+            raise EnvironmentError(response.text)

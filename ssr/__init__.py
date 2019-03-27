@@ -3,4 +3,5 @@ name = 'ssr'
 
 def setup():
     from .worker import Worker
-    Worker().run()
+    worker = Worker()
+    worker.run()

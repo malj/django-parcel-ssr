@@ -1,4 +1,4 @@
-import time
+from time import sleep
 from io import BytesIO
 from subprocess import Popen
 
@@ -13,7 +13,7 @@ def wait_for_signal(stream: BytesIO, signal: str) -> None:
             else:
                 print(text)
         else:
-            time.sleep(0.1)
+            sleep(0.1)
 
 
 def read_output(process: Popen) -> None:
