@@ -36,6 +36,11 @@ class Components(BaseEngine):
         scripts_dir = join(dirname(abspath(__file__)), 'scripts')
         copytree(scripts_dir, settings.scripts_dir)
 
+        if settings.env['NODE_ENV'] == 'production':
+            for build_dir in (settings.bundles_dir, settings.dist_dir):
+                if exists(build_dir):
+                    rmtree(build_dir, ignore_errors=True)
+
         threads = [server_thread]
         for template_dir in self.template_dirs:
             for extension in extensions:
