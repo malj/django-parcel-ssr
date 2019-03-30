@@ -6,7 +6,7 @@ import { link, color } from './utils'
 const { entry, config } = JSON.parse(process.env.PARCEL_OPTIONS)
 const bundler = new Bundler(entry, config)
 
-if (process.env.NODE_ENV === 'production') {
+if (!config.watch) {
     bundler.bundle().catch(console.error)
 }
 else {
@@ -31,7 +31,7 @@ else {
         console.log(
             '🤠 ',
             `${color.bright}${color.magenta}SSR worker${color.reset}`,
-            `${process.pid}${color.reset} spawned at`,
+            `${process.pid} spawned at`,
             `${color.dim}${SOCKET}${color.reset}`
         )
         try {

@@ -1,6 +1,6 @@
 import json
 from os import makedirs, remove, setsid, environ
-from os.path import splitext, exists, dirname
+from os.path import exists, dirname
 from urllib.parse import quote_plus, urlencode
 from subprocess import Popen, PIPE
 from threading import Thread
@@ -20,28 +20,8 @@ class Bundler:
         self.bundle = bundle
         self.settings = settings
 
-    def bundle_all(self) -> None:
-        server_thread = Thread(target=self.bundle_server)
-        client_thread = Thread(target=self.bundle_client)
-        server_thread.start()
-        client_thread.start()
-        server_thread.join()
-        client_thread.join()
-
-    def bundle_server(self) -> None:
-        if self.settings.env['NODE_ENV'] == 'production':
-            self._bundle_server()
-        else:
-            self._watch(self.bundle.server.socket, self._bundle_server)
-
-    def bundle_client(self) -> None:
-        if self.settings.env['NODE_ENV'] == 'production':
-            self._bundle_client()
-        else:
-            self._watch(self.bundle.client.socket, self._bundle_client)
-
-    def _bundle_server(self) -> None:
-        self._bundle({
+    def get_server_env(self, watch: bool) -> Dict[str, str]:
+        return {
             'SOCKET': self.bundle.server.socket,
             'COMPONENT': self.bundle.component_relpath,
             'SCRIPT': self.bundle.server.script_relpath,
@@ -52,13 +32,14 @@ class Bundler:
                     'outFile': self.bundle.server.out_file,
                     'cache': self.settings.cache,
                     'cacheDir': self.bundle.server.cache_dir,
-                    'sourceMaps': False,
+                    'watch': watch,
+                    'sourceMaps': False
                 }
             })
-        })
+        }
 
-    def _bundle_client(self) -> None:
-        self._bundle({
+    def get_client_env(self, watch: bool) -> Dict[str, str]:
+        return {
             'SOCKET': self.bundle.client.socket,
             'COMPONENT': self.bundle.component_relpath,
             'SCRIPT': self.bundle.client.script_relpath,
@@ -69,12 +50,37 @@ class Bundler:
                     'outFile': self.bundle.client.out_file,
                     'cache': self.settings.cache,
                     'cacheDir': self.bundle.client.cache_dir,
+                    'watch': watch,
                     'publicUrl': self.bundle.url
                 }
             })
-        })
+        }
 
-    def _watch(self, socket: str, watcher: Callable) -> None:
+    def build(self) -> None:
+        server_env = self.get_server_env(False)
+        client_env = self.get_client_env(False)
+        server_thread = Thread(target=self._bundle, args=[server_env, False])
+        client_thread = Thread(target=self._bundle, args=[client_env, False])
+        self._run(server_thread, client_thread)
+
+    def watch(self) -> None:
+        server_env = self.get_server_env(True)
+        client_env = self.get_client_env(True)
+        server_thread = Thread(target=self._watch, args=[
+            self.bundle.server.socket, lambda: self._bundle(server_env, True)
+        ])
+        client_thread = Thread(target=self._watch, args=[
+            self.bundle.client.socket, lambda: self._bundle(client_env, True)
+        ])
+        self._run(server_thread, client_thread)
+
+    def _run(self, server_thread: Thread, client_thread: Thread) -> None:
+        server_thread.start()
+        client_thread.start()
+        server_thread.join()
+        client_thread.join()
+
+    def _watch(self, socket: str, watcher: Callable[[], None]) -> None:
         makedirs(dirname(socket), exist_ok=True)
         if exists(socket):
             if self._reconnect(socket):
@@ -112,7 +118,7 @@ class Bundler:
         except:
             return False
 
-    def _bundle(self, env: Dict[str, str] = {}) -> None:
+    def _bundle(self, env: Dict[str, str], watch: bool) -> None:
         process = Popen([
             'node', self.settings.bundler
         ], stdout=PIPE, stderr=PIPE, preexec_fn=setsid, env={
@@ -120,9 +126,7 @@ class Bundler:
             **self.settings.env,
             **env
         })
-        if self.settings.env['NODE_ENV'] == 'production':
-            read_output(process)
-        else:
+        if watch:
             stdout_thread = Thread(target=wait_for_signal, daemon=True, args=[
                 process.stdout, self.settings.env['SIGNAL']
             ])
@@ -133,3 +137,5 @@ class Bundler:
             stderr_thread.start()
             stdout_thread.join()
             stderr_thread.join()
+        else:
+            read_output(process)

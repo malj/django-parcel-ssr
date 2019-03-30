@@ -44,9 +44,12 @@ class Bundle:
         )
 
         self.script = urljoin(settings.static_url, hashed_out_relpath)
-        stylesheet_relpath = splitext(hashed_out_relpath)[0] + '.css'
+        stylesheet_relpath = splitext(out_relpath)[0] + '.css'
+        hashed_stylesheet_relpath = splitext(hashed_out_relpath)[0] + '.css'
+
         if exists(join(settings.bundles_dir, stylesheet_relpath)):
-            self.stylesheet = urljoin(settings.static_url, stylesheet_relpath)
+            self.stylesheet = urljoin(settings.static_url,
+                                      hashed_stylesheet_relpath)
         else:
             self.stylesheet = ''
 

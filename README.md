@@ -25,9 +25,14 @@ Default React setup comes with optional [`styled-jsx`](https://github.com/zeit/s
 }
 ```
 
-Update `TEMPLATES` and `STATICFILES_DIRS` entries in `settings.py`:
+Update `INSTALLED_APPS`, `TEMPLATES`, and `STATICFILES_DIRS` entries in `settings.py`:
 
 ```python
+INSTALLED_APPS = [
+    'ssr',
+    # ...
+]
+
 TEMPLATES = [
     {
         'BACKEND': 'ssr.backend.Components',
@@ -135,6 +140,16 @@ Consult [Parcel documentation](https://parceljs.org/getting_started.html) to lea
 ### Restrictions
 
 Template context has to be a JSON serializable value because the actual rendering is handled by JavaScript. Django objects have to be [serialized](https://docs.djangoproject.com/en/2.1/topics/serialization/#serialization-formats-json); querysets can be rendered as dictionaries instead of model instances using [`QuerySet.values()`](https://docs.djangoproject.com/en/2.1/ref/models/querysets/#values). For advanced use cases such as handling model relations, serialize context data manually, e.g. using Django REST Framework's [model serializer](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer).
+
+
+## Deployment
+
+If `NODE_ENV` option is set to `production` (by default this happens when `DEBUG = False`), starting the Django app will not automatically bundle entry points. You'll need to invoke the management command manually, and collect staticfiles afterwards:
+
+```bash
+./manage.py bundle
+./manage.py collectstatic -l
+```
 
 ## Options
 

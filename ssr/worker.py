@@ -1,24 +1,45 @@
-from typing import List
+from typing import List, Tuple, Callable
 from threading import Thread
+from .server import Server
+from .bundler import Bundler
 
 
-class Worker():
+class Worker:
     _state = {}  # type: dict
 
-    def __init__(self, threads: List[Thread] = None) -> None:
+    def __init__(
+        self,
+        production_mode: bool = None,
+        setup: Callable[[], Tuple[Server, List[Bundler]]] = None
+    ) -> None:
         self.__dict__ = self._state
-        if threads is not None:
-            self._threads = threads
+        if production_mode is not None:
+            self.production_mode = production_mode
+        if setup is not None:
+            self.threads = []  # type: List[Thread]
+            self.setup = setup
 
-    @property
-    def threads(self) -> List[Thread]:
-        if hasattr(self, '_threads'):
-            return self._threads
-        else:
+    def __getattr__(self, name: str):
+        if name in ('server', 'bundlers'):
+            self.server, self.bundlers = self.setup()
+            return getattr(self, name)
+
+        if name in ('setup', 'threads', 'production_mode'):
             raise EnvironmentError(
                 'Server side rendering improperly configured. Did you forget '
                 'to include the template engine in your Django settings?'
             )
+
+    def use_server(self) -> None:
+        self.threads.append(Thread(target=self.server.run))
+
+    def use_builders(self) -> None:
+        for bundler in self.bundlers:
+            self.threads.append(Thread(target=bundler.build))
+
+    def use_watchers(self) -> None:
+        for bundler in self.bundlers:
+            self.threads.append(Thread(target=bundler.watch))
 
     def run(self) -> None:
         for thread in self.threads:
