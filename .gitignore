@@ -1,6 +1,8 @@
 .vscode/
 .direnv/
 .envrc
+__pycache__/
+*.py[co]
 .mypy_cache/
 .python-version
 build/
