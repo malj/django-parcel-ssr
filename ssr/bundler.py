@@ -9,29 +9,30 @@ from typing import Callable, Dict
 from requests import codes
 from requests_unixsocket import Session
 from .utils import wait_for_signal, read_output
-from .bundle import Bundle
-from .settings import Settings
+from .settings import BUNDLER
+from .template import Template
 
 
 class Bundler:
-    session = Session()
-
-    def __init__(self, bundle: Bundle, settings: Settings) -> None:
-        self.bundle = bundle
-        self.settings = settings
+    def __init__(self, template: Template,
+                 env: Dict[str, str], cache: bool) -> None:
+        self.session = Session()
+        self.template = template
+        self.env = env
+        self.cache = cache
 
     def get_server_env(self, watch: bool) -> Dict[str, str]:
         return {
-            'SOCKET': self.bundle.server.socket,
-            'COMPONENT': self.bundle.component_relpath,
-            'SCRIPT': self.bundle.server.script_relpath,
+            'SOCKET': self.template.server.socket,
+            'COMPONENT': self.template.component_relpath,
+            'SCRIPT': self.template.server.script_relpath,
             'PARCEL_OPTIONS': json.dumps({
-                'entry': self.bundle.server.entry,
+                'entry': self.template.server.entry,
                 'config': {
-                    'outDir': self.bundle.server.out_dir,
-                    'outFile': self.bundle.server.out_file,
-                    'cache': self.settings.cache,
-                    'cacheDir': self.bundle.server.cache_dir,
+                    'outDir': self.template.server.out_dir,
+                    'outFile': self.template.server.out_file,
+                    'cache': self.cache,
+                    'cacheDir': self.template.server.cache_dir,
                     'watch': watch,
                     'sourceMaps': False
                 }
@@ -40,18 +41,18 @@ class Bundler:
 
     def get_client_env(self, watch: bool) -> Dict[str, str]:
         return {
-            'SOCKET': self.bundle.client.socket,
-            'COMPONENT': self.bundle.component_relpath,
-            'SCRIPT': self.bundle.client.script_relpath,
+            'SOCKET': self.template.client.socket,
+            'COMPONENT': self.template.component_relpath,
+            'SCRIPT': self.template.client.script_relpath,
             'PARCEL_OPTIONS': json.dumps({
-                'entry': self.bundle.client.entry,
+                'entry': self.template.client.entry,
                 'config': {
-                    'outDir': self.bundle.client.out_dir,
-                    'outFile': self.bundle.client.out_file,
-                    'cache': self.settings.cache,
-                    'cacheDir': self.bundle.client.cache_dir,
+                    'outDir': self.template.client.out_dir,
+                    'outFile': self.template.client.out_file,
+                    'cache': self.cache,
+                    'cacheDir': self.template.client.cache_dir,
                     'watch': watch,
-                    'publicUrl': self.bundle.url
+                    'publicUrl': self.template.url
                 }
             })
         }
@@ -59,38 +60,38 @@ class Bundler:
     def build(self) -> None:
         server_env = self.get_server_env(False)
         client_env = self.get_client_env(False)
-        server_thread = Thread(target=self._bundle, args=[server_env, False])
-        client_thread = Thread(target=self._bundle, args=[client_env, False])
-        self._run(server_thread, client_thread)
+        server_thread = Thread(target=self.bundle, args=[server_env, False])
+        client_thread = Thread(target=self.bundle, args=[client_env, False])
+        self.run(server_thread, client_thread)
 
     def watch(self) -> None:
         server_env = self.get_server_env(True)
         client_env = self.get_client_env(True)
-        server_thread = Thread(target=self._watch, args=[
-            self.bundle.server.socket, lambda: self._bundle(server_env, True)
+        server_thread = Thread(target=self.prepare, args=[
+            self.template.server.socket, lambda: self.bundle(server_env, True)
         ])
-        client_thread = Thread(target=self._watch, args=[
-            self.bundle.client.socket, lambda: self._bundle(client_env, True)
+        client_thread = Thread(target=self.prepare, args=[
+            self.template.client.socket, lambda: self.bundle(client_env, True)
         ])
-        self._run(server_thread, client_thread)
+        self.run(server_thread, client_thread)
 
-    def _run(self, server_thread: Thread, client_thread: Thread) -> None:
+    def run(self, server_thread: Thread, client_thread: Thread) -> None:
         server_thread.start()
         client_thread.start()
         server_thread.join()
         client_thread.join()
 
-    def _watch(self, socket: str, watcher: Callable[[], None]) -> None:
+    def prepare(self, socket: str, watcher: Callable[[], None]) -> None:
         makedirs(dirname(socket), exist_ok=True)
         if exists(socket):
-            if self._reconnect(socket):
+            if self.reconnect(socket):
                 return
             remove(socket)
         watcher()
-        self._connect(socket)
+        self.connect(socket)
 
-    def _poll(self, socket: str) -> None:
-        url = self._get_url(socket)
+    def poll(self, socket: str) -> None:
+        url = self.get_url(socket)
         while True:
             response = self.session.get(url)
             message = response.content.strip(b' ')
@@ -99,39 +100,39 @@ class Bundler:
             else:
                 sleep(0.1)
 
-    def _get_url(self, socket: str) -> str:
+    def get_url(self, socket: str) -> str:
         return 'http+unix://' + quote_plus(socket) + '?' + urlencode({
-            'pid': self.settings.env['DJANGO_PID']
+            'pid': self.env['DJANGO_PID']
         })
 
-    def _connect(self, socket: str) -> None:
-        Thread(target=self._poll, daemon=True, args=[socket]).start()
+    def connect(self, socket: str) -> None:
+        Thread(target=self.poll, daemon=True, args=[socket]).start()
 
-    def _reconnect(self, socket: str) -> bool:
+    def reconnect(self, socket: str) -> bool:
         try:
-            url = self._get_url(socket)
+            url = self.get_url(socket)
             response = self.session.get(url)
             connection_exists = response.status_code == codes.ok
             if connection_exists:
-                self._connect(socket)
+                self.connect(socket)
             return connection_exists
         except:
             return False
 
-    def _bundle(self, env: Dict[str, str], watch: bool) -> None:
+    def bundle(self, env: Dict[str, str], watch: bool) -> None:
         process = Popen([
-            'node', self.settings.bundler
+            'node', BUNDLER
         ], stdout=PIPE, stderr=PIPE, preexec_fn=setsid, env={
             **environ,
-            **self.settings.env,
+            **self.env,
             **env
         })
         if watch:
             stdout_thread = Thread(target=wait_for_signal, daemon=True, args=[
-                process.stdout, self.settings.env['SIGNAL']
+                process.stdout, self.env['SIGNAL']
             ])
             stderr_thread = Thread(target=wait_for_signal, daemon=True, args=[
-                process.stderr, self.settings.env['SIGNAL']
+                process.stderr, self.env['SIGNAL']
             ])
             stdout_thread.start()
             stderr_thread.start()

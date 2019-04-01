@@ -5,26 +5,26 @@ from .bundler import Bundler
 
 
 class Worker:
-    _state = {}  # type: dict
+    state = {}  # type: dict
 
     def __init__(
         self,
         production_mode: bool = None,
         setup: Callable[[], Tuple[Server, List[Bundler]]] = None
     ) -> None:
-        self.__dict__ = self._state
+        self.__dict__ = self.state
         if production_mode is not None:
             self.production_mode = production_mode
         if setup is not None:
-            self.threads = []  # type: List[Thread]
             self.setup = setup
+            self.threads = []  # type: List[Thread]
 
     def __getattr__(self, name: str):
         if name in ('server', 'bundlers'):
             self.server, self.bundlers = self.setup()
             return getattr(self, name)
 
-        if name in ('setup', 'threads', 'production_mode'):
+        if name in ('production_mode', 'setup', 'threads'):
             raise EnvironmentError(
                 'Server side rendering improperly configured. Did you forget '
                 'to include the template engine in your Django settings?'
