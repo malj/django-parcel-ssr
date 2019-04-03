@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/django-parcel-ssr.svg)](https://badge.fury.io/py/django-parcel-ssr)
+
 # Django Parcel SSR
 
 Zero configuration performant JavaScript server side rendering for [Django web framework](https://www.djangoproject.com/), powered by [Parcel bundler](https://parceljs.org/). 
