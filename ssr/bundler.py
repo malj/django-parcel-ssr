@@ -14,9 +14,10 @@ from .template import Template
 
 
 class Bundler:
+    session = Session()
+
     def __init__(self, template: Template,
                  env: Dict[str, str], cache: bool) -> None:
-        self.session = Session()
         self.template = template
         self.env = env
         self.cache = cache

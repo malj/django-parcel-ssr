@@ -3,7 +3,6 @@ from platform import system
 from tempfile import gettempdir
 from django.conf import settings
 
-
 BASE_DIR = join(settings.BASE_DIR, '.ssr')
 TEMP_DIR = '/tmp' if system() == 'Darwin' else gettempdir()
 SCRIPTS_DIR = join(BASE_DIR, 'scripts')

@@ -13,19 +13,18 @@ from .utils import wait_for_signal
 
 
 class Server:
-    socket_name = 'renderer.sock'
+    session = Session()
+    socket = join(SOCKETS_DIR, 'renderer.sock')
 
     def __init__(self, env: Dict[str, str],
                  json_encoder: JSONEncoder = None) -> None:
-        self.session = Session()
-        self.socket = join(SOCKETS_DIR, self.socket_name)
         self.env = env
         self.json_encoder = json_encoder
 
-    def get_url(self, path: str = '', params: dict = {}) -> str:
-        host = quote_plus(self.socket) + path
+    def get_url(self, pathname: str = '', params: dict = {}) -> str:
+        host = quote_plus(self.socket)
         querystring = urlencode(params)
-        return 'http+unix://' + host + '?' + querystring
+        return 'http+unix://' + host + pathname + '?' + querystring
 
     @property
     def exists(self) -> bool:
