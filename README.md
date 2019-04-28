@@ -27,6 +27,8 @@ Default React setup comes with optional [`styled-jsx`](https://github.com/zeit/s
 }
 ```
 
+**Note for TypeScript users**: Parcel 1.x doesn't support Babel plugins for TypeScript out the box. Check out the [TypeScript example](examples/typescript.md) for a workaround.
+
 Update `INSTALLED_APPS`, `TEMPLATES`, and `STATICFILES_DIRS` entries in `settings.py`:
 
 ```python
@@ -261,6 +263,7 @@ export default Component => {
 
 For advanced use cases such as using client side routing, state management libraries, or different JavaScript view libraries altogether, check out the [examples](examples):
 
+- [TypeScript](examples/typescript.md)
 - [React with React Router](examples/react-with-react-router.md)
 - [React with Redux](examples/react-with-redux.md)
 - [Cycle.js](examples/cyclejs.md)
