@@ -3,7 +3,6 @@ from os.path import exists
 from shutil import rmtree
 from django.core.management.base import BaseCommand, CommandError
 from ssr.settings import HASH_FILE, BUNDLES_DIR, STATIC_DIR
-from ssr import worker
 
 
 class Command(BaseCommand):
@@ -15,6 +14,7 @@ class Command(BaseCommand):
                 rmtree(build_dir, ignore_errors=True)
         if exists(HASH_FILE):
             remove(HASH_FILE)  # Generate new hash for cache busting
+        from ssr import worker
         worker.use_builders()
         try:
             worker.run()

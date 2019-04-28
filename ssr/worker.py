@@ -8,12 +8,13 @@ threads = []  # type: List[Thread]
 
 try:
     engine = engines['javascript']  # type: javascript.Components
-except (ImportError, InvalidTemplateEngineError):
+except InvalidTemplateEngineError:
     raise EnvironmentError(
         'Server side rendering improperly configured. Did you forget '
         'to include the template engine in your Django settings?'
     )
 
+engine.setup()
 production_mode = engine.production_mode
 
 

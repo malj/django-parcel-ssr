@@ -22,9 +22,10 @@ class Components(BaseEngine):
 
     def __init__(self, params: dict) -> None:
         params = params.copy()
-        options = params.pop('OPTIONS').copy()
+        self.options = params.pop('OPTIONS').copy()
         super().__init__(params)
 
+    def setup(self) -> None:
         makedirs(BASE_DIR, exist_ok=True)
 
         if exists(SCRIPTS_DIR):
@@ -46,8 +47,8 @@ class Components(BaseEngine):
             'WORKER_TTL': '1000'
         }  # Dict[str, str]
 
-        if 'env' in options:
-            env.update(options['env'])
+        if 'env' in self.options:
+            env.update(self.options['env'])
 
         env.update({
             'WORKER_TTL': str(env['WORKER_TTL']),
@@ -57,15 +58,15 @@ class Components(BaseEngine):
 
         self.production_mode = env['NODE_ENV'] == 'production'
 
-        if 'json_encoder' in options:
-            json_encoder = import_string(options['json_encoder'])
+        if 'json_encoder' in self.options:
+            json_encoder = import_string(self.options['json_encoder'])
         else:
             json_encoder = DjangoJSONEncoder
 
         self.server = Server(env, json_encoder)
 
-        if 'output_dirname' in options:
-            output_dirname = options['output_dirname']
+        if 'output_dirname' in self.options:
+            output_dirname = self.options['output_dirname']
         else:
             output_dirname = 'dist/'
 
@@ -76,16 +77,16 @@ class Components(BaseEngine):
             'server': join(SCRIPTS_DIR, 'react', 'server.js'),
             'client': join(SCRIPTS_DIR, 'react', 'client.js'),
         }
-        if 'scripts' in options:
-            scripts.update(options['scripts'])
+        if 'scripts' in self.options:
+            scripts.update(self.options['scripts'])
 
-        if 'extensions' in options:
-            extensions = options['extensions']
+        if 'extensions' in self.options:
+            extensions = self.options['extensions']
         else:
             extensions = ['js', 'jsx', 'ts', 'tsx']
 
-        if 'cache' in options:
-            cache = options['cache']
+        if 'cache' in self.options:
+            cache = self.options['cache']
         else:
             cache = True
 
