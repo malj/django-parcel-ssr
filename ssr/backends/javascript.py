@@ -9,12 +9,11 @@ from django.template import TemplateDoesNotExist
 from django.utils.module_loading import import_string
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
-from typing import Dict, List, Tuple
-from .settings import HASH_FILE, SCRIPTS_DIR, BASE_DIR, STATIC_DIR
-from .server import Server
-from .bundler import Bundler
-from .worker import Worker
-from .template import Template
+from typing import Dict, List
+from ssr.settings import HASH_FILE, SCRIPTS_DIR, BASE_DIR, STATIC_DIR
+from ssr.server import Server
+from ssr.bundler import Bundler
+from ssr.template import Template
 
 
 class Components(BaseEngine):
@@ -26,25 +25,12 @@ class Components(BaseEngine):
         options = params.pop('OPTIONS').copy()
         super().__init__(params)
 
-        env = {
-            'NODE_ENV': 'development' if settings.DEBUG else 'production',
-            'NODE_OPTIONS': '--experimental-modules --no-warnings',
-            'WORKER_TTL': 1000
-        }
-        if 'env' in options:
-            env = {
-                **env,
-                **options['env']
-            }
-        options['env'] = env
-        Worker(env['NODE_ENV'] == 'production', lambda: self.setup(options))
-
-    def setup(self, options: dict) -> Tuple[Server, List[Bundler]]:
         makedirs(BASE_DIR, exist_ok=True)
 
         if exists(SCRIPTS_DIR):
             rmtree(SCRIPTS_DIR, ignore_errors=True)
-        copytree(join(dirname(abspath(__file__)), 'scripts'), SCRIPTS_DIR)
+        scripts_dir = join(dirname(dirname(abspath(__file__))), 'scripts')
+        copytree(scripts_dir, SCRIPTS_DIR)
 
         if exists(HASH_FILE):
             with open(HASH_FILE, 'r') as hash_file:
@@ -55,18 +41,28 @@ class Components(BaseEngine):
                 hash_file.write(build_hash)
 
         env = {
-            **options['env'],
-            'WORKER_TTL': str(options['env']['WORKER_TTL']),
+            'NODE_ENV': 'development' if settings.DEBUG else 'production',
+            'NODE_OPTIONS': '--experimental-modules --no-warnings',
+            'WORKER_TTL': '1000'
+        }  # Dict[str, str]
+
+        if 'env' in options:
+            env.update(options['env'])
+
+        env.update({
+            'WORKER_TTL': str(env['WORKER_TTL']),
             'SIGNAL': build_hash,
             'DJANGO_PID': str(getpid())
-        }
+        })
+
+        self.production_mode = env['NODE_ENV'] == 'production'
 
         if 'json_encoder' in options:
             json_encoder = import_string(options['json_encoder'])
         else:
             json_encoder = DjangoJSONEncoder
 
-        server = Server(env, json_encoder)
+        self.server = Server(env, json_encoder)
 
         if 'output_dirname' in options:
             output_dirname = options['output_dirname']
@@ -81,10 +77,7 @@ class Components(BaseEngine):
             'client': join(SCRIPTS_DIR, 'react', 'client.js'),
         }
         if 'scripts' in options:
-            scripts = {
-                **scripts,
-                **options['scripts']
-            }
+            scripts.update(options['scripts'])
 
         if 'extensions' in options:
             extensions = options['extensions']
@@ -96,7 +89,7 @@ class Components(BaseEngine):
         else:
             cache = True
 
-        bundlers = []
+        self.bundlers = []  # type: List[Bundler]
 
         for template_dir in self.template_dirs:
             for extension in extensions:
@@ -111,14 +104,12 @@ class Components(BaseEngine):
                         server_script=scripts['server'],
                         client_script=scripts['client'],
                         dist_dir=dist_dir,
-                        server=server,
+                        server=self.server,
                         build_hash=build_hash
                     )
                     self.templates[template.relpath] = template
                     bundler = Bundler(template, env, cache)
-                    bundlers.append(bundler)
-
-        return server, bundlers
+                    self.bundlers.append(bundler)
 
     def get_template(self, template_name: str) -> Template:
         if template_name in self.templates:

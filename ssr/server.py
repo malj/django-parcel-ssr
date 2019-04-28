@@ -8,8 +8,8 @@ from subprocess import Popen, PIPE
 from requests import codes
 from requests_unixsocket import Session
 from typing import Dict
-from .settings import SERVER, SOCKETS_DIR
-from .utils import wait_for_signal
+from ssr.settings import SERVER, SOCKETS_DIR
+from ssr.utils import wait_for_signal
 
 
 class Server:

@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 
 TEMPLATES = [
     {
-        'BACKEND': 'ssr.backend.Components',
+        'BACKEND': 'ssr.backends.javascript.Components',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {

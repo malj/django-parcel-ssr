@@ -8,9 +8,9 @@ from time import sleep
 from typing import Callable, Dict
 from requests import codes
 from requests_unixsocket import Session
-from .utils import wait_for_signal, read_output
-from .settings import BUNDLER
-from .template import Template
+from ssr.settings import BUNDLER
+from ssr.template import Template
+from ssr.utils import wait_for_signal, read_output
 
 
 class Bundler:

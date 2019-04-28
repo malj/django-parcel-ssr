@@ -1,48 +1,38 @@
-from typing import List, Tuple, Callable
+from django.template import engines
+from django.template.utils import InvalidTemplateEngineError
 from threading import Thread
-from .server import Server
-from .bundler import Bundler
+from typing import List
+from ssr.backends import javascript
+
+threads = []  # type: List[Thread]
+
+try:
+    engine = engines['javascript']  # type: javascript.Components
+except (ImportError, InvalidTemplateEngineError):
+    raise EnvironmentError(
+        'Server side rendering improperly configured. Did you forget '
+        'to include the template engine in your Django settings?'
+    )
+
+production_mode = engine.production_mode
 
 
-class Worker:
-    state = {}  # type: dict
+def use_server() -> None:
+    threads.append(Thread(target=engine.server.run))
 
-    def __init__(
-        self,
-        production_mode: bool = None,
-        setup: Callable[[], Tuple[Server, List[Bundler]]] = None
-    ) -> None:
-        self.__dict__ = self.state
-        if production_mode is not None:
-            self.production_mode = production_mode
-        if setup is not None:
-            self.setup = setup
-            self.threads = []  # type: List[Thread]
 
-    def __getattr__(self, name: str):
-        if name in ('server', 'bundlers'):
-            self.server, self.bundlers = self.setup()
-            return getattr(self, name)
+def use_builders() -> None:
+    for bundler in engine.bundlers:
+        threads.append(Thread(target=bundler.build))
 
-        if name in ('production_mode', 'setup', 'threads'):
-            raise EnvironmentError(
-                'Server side rendering improperly configured. Did you forget '
-                'to include the template engine in your Django settings?'
-            )
 
-    def use_server(self) -> None:
-        self.threads.append(Thread(target=self.server.run))
+def use_watchers() -> None:
+    for bundler in engine.bundlers:
+        threads.append(Thread(target=bundler.watch))
 
-    def use_builders(self) -> None:
-        for bundler in self.bundlers:
-            self.threads.append(Thread(target=bundler.build))
 
-    def use_watchers(self) -> None:
-        for bundler in self.bundlers:
-            self.threads.append(Thread(target=bundler.watch))
-
-    def run(self) -> None:
-        for thread in self.threads:
-            thread.start()
-        for thread in self.threads:
-            thread.join()
+def run() -> None:
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()

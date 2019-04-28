@@ -3,8 +3,8 @@ from urllib.parse import urljoin
 from collections import namedtuple
 from django.template import TemplateSyntaxError
 from django.http import HttpRequest
-from .server import Server
-from .settings import ENTRIES_DIR, BUNDLES_DIR, CACHE_DIR, SOCKETS_DIR
+from ssr.settings import ENTRIES_DIR, BUNDLES_DIR, CACHE_DIR, SOCKETS_DIR
+from ssr.server import Server
 
 
 class Template:
