@@ -6,5 +6,8 @@ export default Component => {
     const props = JSON.parse(decodeURIComponent(container.dataset.props))
     const component = React.createElement(Component, props)
 
-    ReactDOM.hydrate(component, container)
+    ReactDOM[process.env.NODE_ENV === 'production'
+        ? 'hydrate'
+        : 'render'
+    ](component, container)
 }

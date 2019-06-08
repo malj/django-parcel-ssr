@@ -43,7 +43,7 @@ class Components(BaseEngine):
 
         env = {
             'NODE_ENV': 'development' if settings.DEBUG else 'production',
-            'NODE_OPTIONS': '--experimental-modules --no-warnings',
+            'NODE_OPTIONS': '-r esm',
             'WORKER_TTL': '1000'
         }  # Dict[str, str]
 

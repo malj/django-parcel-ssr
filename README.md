@@ -8,7 +8,7 @@ Zero configuration performant JavaScript server side rendering for [Django web f
 
 ```bash
 pip install django-parcel-ssr
-npm install parcel-bundler
+npm install parcel-bundler esm
 ```
 
 [React](https://reactjs.org/) is supported out of the box, but any JavaScript view library with server side rendering support can be used instead (see `scripts` option and [examples](examples)). To use React install additional dependencies:
@@ -49,7 +49,7 @@ TEMPLATES = [
             # 'cache': True,
             # 'env': {
             #     'NODE_ENV': 'development' if DEBUG else 'production',
-            #     'NODE_OPTIONS': '--experimental-modules --no-warnings',
+            #     'NODE_OPTIONS': '-r esm',
             #     'WORKER_TTL': 1000,
             # },
             # 'scripts': {
@@ -145,7 +145,6 @@ Consult [Parcel documentation](https://parceljs.org/getting_started.html) to lea
 
 Template context has to be a JSON serializable value because the actual rendering is handled by JavaScript. Django objects have to be [serialized](https://docs.djangoproject.com/en/2.1/topics/serialization/#serialization-formats-json); querysets can be rendered as dictionaries instead of model instances using [`QuerySet.values()`](https://docs.djangoproject.com/en/2.1/ref/models/querysets/#values). For advanced use cases such as handling model relations, serialize context data manually, e.g. using Django REST Framework's [model serializer](https://www.django-rest-framework.org/api-guide/serializers/#modelserializer).
 
-
 ## Deployment
 
 If `NODE_ENV` option is set to `production` (by default this happens when `DEBUG = False`), starting the Django app will not automatically bundle entry points. You'll need to invoke the management command manually, and collect staticfiles afterwards:
@@ -189,25 +188,11 @@ Development mode activates bundle watchers with HMR (hot module replacement). Pr
 
 ### env.NODE_OPTIONS
 
-Default: `'--experimental-modules --no-warnings'`
+Default: `'-r esm'`
 
 CLI options for Node workers. 
 
-Server side renderer uses experimental [ECMAScript modules](https://nodejs.org/docs/latest/api/esm.html) loader to handle dynamic imports, only available in Node 10+. If you require support for older versions of Node, [`esm`](https://github.com/standard-things/esm) loader can be used instead:
-
-```bash
-npm install esm
-```
-
-Add it to `settings.py`:
-
-```python
-'OPTIONS': {
-    'env': {
-        'NODE_OPTIONS': '-r esm'
-    }
-}
-```
+Server side renderer uses [`esm`](https://github.com/standard-things/esm) loader to handle dynamic imports.
 
 ### env.WORKER_TTL
 
@@ -235,7 +220,9 @@ export default Component => ({ script, stylesheet }, props) => {
             ${stylesheet && `<link src="${stylesheet}" rel="stylesheet">`}
         </head>
         <body>
-            <div id="root" data-props="${serializedProps}">${html}</div>
+            <div id="root" data-props="${serializedProps}">${
+                process.env.NODE_ENV === 'production' ? html : ''
+            }</div>
             <script src="${script}"></script>
         </body>
     `
@@ -249,13 +236,14 @@ Default: `'{BASE_DIR}/.ssr/scripts/react/client.js'`
 Absolute path to custom `hydrate` function, used to update the root DOM node when the page loads. This file is transpiled and executed in the browser.
 
 ```javascript
-import { createElement, hydrate } from 'some-view-library'
+import { createElement, hydrate, render } from 'some-view-library'
 
 export default Component => {
     const root = document.getElementById('root')
     const props = JSON.parse(decodeURIComponent(root.dataset.props))
     const component = createElement(Component, props)
-    hydrate(component, root)
+    const mount = process.env.NODE_ENV === 'production' ? hydrate : render
+    mount(component, root)
 }
 ```
 

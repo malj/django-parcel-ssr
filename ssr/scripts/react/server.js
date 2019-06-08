@@ -25,7 +25,9 @@ export default Component => ({ script, stylesheet }, props) => {
         '</head>',
         `<body ${helmet.bodyAttributes.toString()}>`,
         helmet.noscript.toString(),
-        `<div id="__react_root__" data-props="${serializedProps}">${html}</div>`,
+        `<div id="__react_root__" data-props="${serializedProps}">${
+        process.env.NODE_ENV === 'production' ? html : ''
+        }</div>`,
         helmet.script.toString(),
         `<script src="${script}"></script>`,
         '</body>',
