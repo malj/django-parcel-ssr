@@ -126,7 +126,7 @@ from django.shortcuts import render
 
 def react_view(request):
     return render(request, 'template.js', context={
-        'title': 'Django SSR'
+        'title': 'Django SSR',
         'count': 0,
         'color': 'red'
     })
